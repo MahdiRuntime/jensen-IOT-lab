@@ -48,16 +48,22 @@ def latest(device_id):
     # TODO M1:
     # Läs senaste mätningen från PostgreSQL med get_latest_measurement(...).
     # Returnera 404 om sensorn eller en mätning saknas.
+
+    if not device_exists(device_id):
+        return jsonify({"error": f"Unknown deviceId: {device_id}"}), 404
+
+    measurement = get_latest_measurement(device_id)
+    if measurement is None:
+        return jsonify({"error": f"No measurements found for deviceId: {device_id}"}), 404  
+
+    return jsonify(measurement), 200
     #
     # TODO M2:
     # Utöka M1-lösningen med cache-aside:
     # 1. Försök läsa från Redis.
     # 2. Vid cache miss: läs från PostgreSQL.
     # 3. Spara databasresultatet i Redis.
-    return jsonify({
-        "message": "TODO: implementera latest measurement",
-        "deviceId": device_id
-    }), 501
+    
 
 
 @app.get("/devices/<device_id>/measurements")
@@ -65,10 +71,12 @@ def device_history(device_id):
     # TODO M1:
     # Hämta sensorhistorik från PostgreSQL.
     # Känd sensor utan mätningar: 200 och []. Okänd sensor: 404.
-    return jsonify({
-        "message": "TODO: implementera device history",
-        "deviceId": device_id
-    }), 501
+    if not device_exists(device_id):
+        return jsonify({"error": f"Unknown deviceId: {device_id}"}), 404
+
+    measurements = get_measurements_for_device(device_id)
+    return jsonify(measurements), 200
+    
 
 
 @app.post("/measurements")
@@ -83,8 +91,15 @@ def create_measurement():
     # TODO M1:
     # Kontrollera med device_exists(...) att deviceId tillhör en känd sensor.
     # Okänd sensor ska ge 400 med ett tydligt JSON-fel.
+    device_id = data.get("deviceId")
+    if not device_exists(device_id):
+            return jsonify({"error": f"Unknown deviceId: {device_id}"}), 400
+    
     #
     # Spara till PostgreSQL via insert_measurement(data).
+
+    measurement = insert_measurement(data)
+    
     #
     # TODO M2:
     # Uppdatera latest-cache för sensorn.
@@ -92,7 +107,7 @@ def create_measurement():
     # Under starter-fasen returneras 202 så att simulatorn kan köras
     # även innan studenten implementerat persistensen.
     print(f"VALID measurement received: {data}")
-    return jsonify({"status": "accepted", "measurement": data}), 202
+    return jsonify({"status": "created", "measurement": measurement}), 201
 
 
 @app.get("/statistics")
