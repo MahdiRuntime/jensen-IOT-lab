@@ -12,10 +12,16 @@ client = redis.Redis(
 def get_latest_from_cache(device_id):
     # TODO M2:
     # Läs senaste mätvärdet från Redis.
+
+    value = client.get(f"latest:{device_id}")
+    if value is not None:
+        return json.loads(value)
     return None
 
 
 def set_latest_in_cache(device_id, measurement):
     # TODO M2:
     # Spara senaste mätvärdet i Redis.
-    pass
+    
+    client.set(f"latest:{device_id}", json.dumps(measurement))
+    

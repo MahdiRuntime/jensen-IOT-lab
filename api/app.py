@@ -45,24 +45,22 @@ def measurements():
 
 @app.get("/devices/<device_id>/latest")
 def latest(device_id):
-    # TODO M1:
-    # Läs senaste mätningen från PostgreSQL med get_latest_measurement(...).
-    # Returnera 404 om sensorn eller en mätning saknas.
-
     if not device_exists(device_id):
-        return jsonify({"error": f"Unknown deviceId: {device_id}"}), 404
+        return jsonify({
+            "error": f"Unknown deviceId: {device_id}"
+            }), 404
+
+    cached = get_latest_from_cache(device_id)
+    if cached is not None:
+        return jsonify(cached), 200
 
     measurement = get_latest_measurement(device_id)
     if measurement is None:
         return jsonify({"error": f"No measurements found for deviceId: {device_id}"}), 404  
 
+    set_latest_in_cache(device_id, measurement)
     return jsonify(measurement), 200
-    #
-    # TODO M2:
-    # Utöka M1-lösningen med cache-aside:
-    # 1. Försök läsa från Redis.
-    # 2. Vid cache miss: läs från PostgreSQL.
-    # 3. Spara databasresultatet i Redis.
+    
     
 
 
@@ -88,24 +86,13 @@ def create_measurement():
         print(f"INVALID measurement from {data.get('deviceId', 'unknown')}: {errors}")
         return jsonify({"errors": errors}), 400
 
-    # TODO M1:
-    # Kontrollera med device_exists(...) att deviceId tillhör en känd sensor.
-    # Okänd sensor ska ge 400 med ett tydligt JSON-fel.
     device_id = data.get("deviceId")
     if not device_exists(device_id):
             return jsonify({"error": f"Unknown deviceId: {device_id}"}), 400
     
-    #
-    # Spara till PostgreSQL via insert_measurement(data).
-
     measurement = insert_measurement(data)
+    set_latest_in_cache(device_id, measurement)
     
-    #
-    # TODO M2:
-    # Uppdatera latest-cache för sensorn.
-    #
-    # Under starter-fasen returneras 202 så att simulatorn kan köras
-    # även innan studenten implementerat persistensen.
     print(f"VALID measurement received: {data}")
     return jsonify({"status": "created", "measurement": measurement}), 201
 
