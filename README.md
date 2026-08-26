@@ -1,6 +1,7 @@
-# Jensen IoT Platform – studentguide
+# Jensen IoT Platform – Sammanfattning
 
-Detta starter-repository hör till uppgiftsunderlaget **Labb för DDM**. Uppgiftsunderlaget beskriver syfte, milstolpar, bedömning, deadline och inlämning. Repositoryt innehåller de praktiska instruktionerna, startkoden och övningarna.
+Detta labben handlar om en IoT-lösning för att kunna sammla och lagra olika data som kommer från 3 olika sensorer, varje sensor skickar temperatur, luftfuktighet och batterimätningar till ett REST API som validerar och sedan sparar värdet i postgreSQL för historik och i Redis som cache. Systemet körs lokalt via docker compose CI.pipeline så körs tester automatiskt och bygger image vid varje git push. API:t levereras i minikube med en deployment vilket ger self-healing och skalning.
+
 
 ## Hitta rätt
 
